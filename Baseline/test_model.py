@@ -24,7 +24,6 @@ hash_table.set_G_encoding([int(x) for x in f.readline().strip().split(' ')])
 hash_table.set_T_encoding([int(x) for x in f.readline().strip().split(' ')])
 hypervector = f.readline().strip()
 while len(hypervector) > 0:
-  print("Read hypervector: ", hypervector)
   hash_table.add_hv([int(x) for x in hypervector.split(' ')])
   hypervector = f.readline().strip()
 f.close()
@@ -43,6 +42,7 @@ while data != '':
   kmer = data[0]
   in_hash_table = data[1].startswith('T')
   query_result = hash_table.query(kmer)
+  #print("QUERY RESULT:", query_result)
   if (in_hash_table):
     total_pos += 1
     if (query_result):

@@ -8,6 +8,10 @@ import numpy as np
 from numpy import dot
 from numpy.linalg import norm
 
+#import cupy as np
+#from cupy import dot
+#from cupy.linalg import norm
+
 class HDHashTable:
   def __init__(self, k: int, D: int):
     """
@@ -31,7 +35,7 @@ class HDHashTable:
     # Encoding scheme: each encoding will have half its values be -1 and the other half be 1
     self.encoding_scheme = {}
     for base in ['A', 'C', 'G', 'T']:
-      encoding = [-1] * floor(D/2) + [1] * ceil(D/2)
+      encoding = np.array([-1] * floor(D/2) + [1] * ceil(D/2))
       np.random.shuffle(encoding)
       self.encoding_scheme[base] = encoding
 
@@ -51,7 +55,7 @@ class HDHashTable:
     Parameters:
       A_encoding (list): The encoding scheme for 'A'
     """
-    self.encoding_scheme['A'] = A_encoding
+    self.encoding_scheme['A'] = np.array(A_encoding)
 
   def set_C_encoding(self, C_encoding: list):
     """
@@ -60,7 +64,7 @@ class HDHashTable:
     Parameters:
       C_encoding (list): The encoding scheme for 'C'
     """
-    self.encoding_scheme['C'] = C_encoding
+    self.encoding_scheme['C'] = np.array(C_encoding)
 
   def set_G_encoding(self, G_encoding: list):
     """
@@ -69,7 +73,7 @@ class HDHashTable:
     Parameters:
       G_encoding (list): The encoding scheme for 'G'
     """
-    self.encoding_scheme['G'] = G_encoding
+    self.encoding_scheme['G'] = np.array(G_encoding)
 
   def set_T_encoding(self, T_encoding: list):
     """
@@ -78,7 +82,7 @@ class HDHashTable:
     Parameters:
       T_encoding (list): The encoding scheme for 'T'
     """
-    self.encoding_scheme['T'] = T_encoding
+    self.encoding_scheme['T'] = np.array(T_encoding)
 
   def encode(self, kmer: str):
     """
@@ -93,11 +97,11 @@ class HDHashTable:
     """
     if len(kmer) != self.k:
       raise ValueError(f'k-mer must have length {self.k}')
-    enc_hv = [1] * self.D
+    enc_hv = np.array([1] * self.D)
     for i in range(self.k):
       base_enc = self.encoding_scheme[kmer[i]]
       base_enc = np.roll(base_enc, i)
-      enc_hv = [a * b for a, b in zip(enc_hv, base_enc)]
+      enc_hv = np.multiply(enc_hv, base_enc) #[a * b for a, b in zip(enc_hv, base_enc)]
     return enc_hv
 
   def add_enc_kmer(self, enc_kmer: list):
@@ -111,7 +115,7 @@ class HDHashTable:
       self.hash_table_hvs.append(enc_kmer)
       self.kmers_in_last_hv = 1
     else:
-      self.hash_table_hvs[-1] = [sum(x) for x in zip(self.hash_table_hvs[-1], enc_kmer)]
+      self.hash_table_hvs[-1] = np.add(self.hash_table_hvs[-1], enc_kmer)#[sum(x) for x in zip(self.hash_table_hvs[-1], enc_kmer)]
       self.kmers_in_last_hv += 1
 
   def add_read(self, read: str):
@@ -141,6 +145,7 @@ class HDHashTable:
       first_base_in_kmer = read[i - self.k + 1]
 
   def query(self, kmer: str):
+    #print("QUERY")
     """
     Returns whether or not the given k-mer is in our hash table
     If the dot product of the encoded k-mer with any of the HVs is greater than the
@@ -154,15 +159,24 @@ class HDHashTable:
     """
     enc_hv = self.encode(kmer)
     largest_dot_prod = 0
+    EFFICIENT = True
+
+    if EFFICIENT:
+
+        result = np.matmul(enc_hv, np.transpose(self.hash_table_hvs))
+        return np.amax(result) > (0.8 * self.D)
+
+
     for read_hv in self.hash_table_hvs:
-      dot_prod = dot(read_hv, enc_hv)
+      dot_prod = dot(np.array(read_hv), enc_hv)
+      #print(dot_prod)
       if dot_prod > largest_dot_prod:
         largest_dot_prod = dot_prod
       if dot_prod > 0.8 * self.D:
         # Early Search Termination (EST)
         # print(f'dot product for {kmer} is {dot_prod}')
         return True
-    print(f'largest dot product for {kmer} is {largest_dot_prod}')
+    #print(f'largest dot product for {kmer} is {largest_dot_prod}')
     return False
 
   def max_dot_prod(self, kmer: str):
@@ -205,6 +219,7 @@ class HDHashTable:
     """
     Prints the dot product between all pairs of base encodings.
     """
+    self.hash_table_hvs = np.array(self.hash_table_hvs)
     print("Print dot product between base encodings to ensure they're dissimilar enough")
     print(f"A and C: {dot(self.encoding_scheme['A'], self.encoding_scheme['C'])}")
     print(f"A and G: {dot(self.encoding_scheme['A'], self.encoding_scheme['G'])}")
