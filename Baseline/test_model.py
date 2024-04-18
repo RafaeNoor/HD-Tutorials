@@ -4,6 +4,7 @@
 
 import argparse
 from HDHashTable import HDHashTable
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--modelPath', action='store', type=str, help='path to model csv file', required=True)
@@ -37,11 +38,29 @@ total_neg = 0
 
 f = open(test_data_path, 'r')
 data = f.readline()
+total_inference_time = 0
+
+keys = []
+labels = []
+
 while data != '':
   data = data.split(',')
   kmer = data[0]
   in_hash_table = data[1].startswith('T')
+  keys.append(kmer)
+  labels.append(in_hash_table)
+  data = f.readline()
+
+f.close()
+
+start_time = time.time();
+for i in range(len(keys)):
+  kmer = keys[i]
+  in_hash_table = labels[i]
+  infer_start = time.time()
   query_result = hash_table.query(kmer)
+  infer_end = time.time()
+  total_inference_time += (infer_end - infer_start)
   #print("QUERY RESULT:", query_result)
   if (in_hash_table):
     total_pos += 1
@@ -51,10 +70,12 @@ while data != '':
     total_neg += 1
     if (not query_result):
       true_neg += 1
-  data = f.readline()
 
+end_time = time.time()
+elapsed = end_time - start_time
+print("Evaluation took {} seconds ...".format(elapsed))
+print("Inference took {} seconds ...".format(total_inference_time))
 num_kmers = total_pos + total_neg
-f.close()
 
 # Print results
 print(f'{num_kmers}')

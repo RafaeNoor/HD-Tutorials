@@ -4,6 +4,7 @@
 # without compromising accuracy.
 
 from math import ceil, floor
+
 import numpy as np
 from numpy import dot
 from numpy.linalg import norm
@@ -34,10 +35,12 @@ class HDHashTable:
 
     # Encoding scheme: each encoding will have half its values be -1 and the other half be 1
     self.encoding_scheme = {}
+
     for base in ['A', 'C', 'G', 'T']:
       encoding = np.array([-1] * floor(D/2) + [1] * ceil(D/2))
       np.random.shuffle(encoding)
       self.encoding_scheme[base] = encoding
+
 
   def add_hv(self, read_hv: list):
     """
