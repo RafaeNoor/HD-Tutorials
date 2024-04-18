@@ -22,8 +22,18 @@ void encode_kmer(
 #endif
         auto base_hv = __hetero_hdc_get_matrix_row<K,D,hvtype>(*encoding_scheme_ptr, K,D,index);
 
+
       __hypervector__<D, hvtype>  row = __hetero_hdc_wrap_shift<D, hvtype>(base_hv, index);
       *base_ptr = row;
+
+      /*
+        std::cout <<"wrap_shift hv" <<"\n";
+        hvtype* wrap_base = (hvtype*) base_ptr;
+        for(int l =0; l < D; l++){
+            std::cout << wrap_base[l] << " ";
+        }
+        std::cout << "\n";
+        */
     __hypervector__<D, hvtype> product = __hetero_hdc_mul<D, hvtype>(row, *encoded_hv_ptr); 
     *encoded_hv_ptr = product;
 
@@ -59,8 +69,6 @@ void encode_kmer_wrapper(
     auto shifted_hv_ptr = __hetero_hdc_get_handle(shifted_hv);
 
 
-    // Initialize with all ones
-	*encoded_hv_ptr  = __hetero_hdc_create_hypervector<D, hvtype>(0, (void*) one<hvtype>);	
 
     for(int i = 0; i < K; i++){
 
@@ -74,8 +82,8 @@ void encode_kmer_wrapper(
 
 #endif
 
-
     }
+
 
 }
 
@@ -85,7 +93,6 @@ template<int K, int D, int N>
 void produce_dot_prod(
         __hypermatrix__<N,D, hvtype>* hash_table, size_t hash_table_size,
         __hypervector__<D, hvtype>* encoded_hv_ptr, size_t encoded_size,
-
         __hypervector__<N, hvtype>* output_ptr, size_t output_size,
         int* argmax, size_t argmax_size
         ){
@@ -130,11 +137,20 @@ bool query(hvtype* kmer, size_t kmer_size,
         ){
 
 
-	__hypervector__<D, hvtype> encoded_hv = __hetero_hdc_hypervector<D, hvtype>();
+	__hypervector__<D, hvtype> encoded_hv = __hetero_hdc_create_hypervector<D, hvtype>(0, (void*) one<hvtype>);	
     auto encoded_hv_handle = __hetero_hdc_get_handle(encoded_hv);
     size_t encoded_size = sizeof(hvtype) * D;
 
-    // encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, encoding_scheme_ptr, encoded_scheme_size);
+   encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, encoding_scheme_ptr, encoded_scheme_size);
+
+   /*
+    std::cout <<"Encoded hv" <<"\n";
+    hvtype* encoded_base = (hvtype*) encoded_hv_handle;
+    for(int l =0; l < D; l++){
+        std::cout << encoded_base[l] << " ";
+    }
+    std::cout << "\n";
+    */
 
     int arg_max;
     size_t arg_max_size = sizeof(int);
@@ -164,6 +180,14 @@ bool query(hvtype* kmer, size_t kmer_size,
 
 
     hvtype* output_base = (hvtype*) output_handle;
+    /*
+    std::cout <<"Output labels" <<"\n";
+    for(int l =0; l < N; l++){
+        std::cout << output_base[l] << " ";
+    }
+    std::cout << "\n";
+    */
+    // std::cout <<"Arg max: "<< arg_max <<" Arg max value: " << output_base[arg_max] << "\n";
 
     return output_base[arg_max] > (0.8 * D);
 

@@ -5,7 +5,7 @@
 #define Dhv 10000
 #define Khv 501
 #define HASH_ROWS (67 - 4)
-#define N_TEST 4 
+#define N_TEST 20
 
 
 #ifdef HPVM
@@ -59,9 +59,6 @@ int main(){
     hvtype* G_vec = base_ptr + (2 * Dhv);
     hvtype* T_vec = base_ptr + (3 * Dhv);
 
-    for(int i =0; i < 10; i++){
-        std::cout << "Hash table entry: "<< hash_table_entries[i] << "\n";
-    }
 
 	__hypervector__<Dhv, hvtype> A_encoding = __hetero_hdc_create_hypervector<Dhv, hvtype>(1, (void*) copy<hvtype>, A_vec);	
 	__hypervector__<Dhv, hvtype> C_encoding = __hetero_hdc_create_hypervector<Dhv, hvtype>(1, (void*) copy<hvtype>, C_vec);	
@@ -90,7 +87,8 @@ int main(){
     auto hash_table_handle = __hetero_hdc_get_handle(hash_table);
     size_t hash_table_size = sizeof(hvtype) * Dhv * HASH_ROWS;
 
-    std::string test_file_name = "./dataset/data_test_small.csv";
+    //std::string test_file_name = "./dataset/data_test_small.csv";
+    std::string test_file_name = "./dataset/data_test_medium.csv";
     std::fstream testFile(test_file_name, std::ios_base::in);
     
     std::vector<hvtype> kmer(Khv);
@@ -103,18 +101,12 @@ int main(){
     for(int i = 0; i < N_TEST; i++){
         std::string entry;
         testFile >> entry;
-        std::cout <<" Entry: "<<entry<<"\n";
 
         int total_length = entry.length();
         std::string included_str = entry.substr(total_length-1, 1);
         std::string sequence = entry.substr(0,total_length-2);
 
-        assert(sequence.length() == Khv);
-
-
-
-        std::cout << "Sequence: "<< sequence << "\n";
-        std::cout << "Included Str: "<< included_str << "\n";
+        //assert(sequence.length() == Khv);
 
         for(int j =0; j < sequence.length(); j++){
             char token = sequence[j];
@@ -147,6 +139,7 @@ int main(){
                 encoding_scheme_handle, encoding_scheme_size,
                 hash_table_handle, hash_table_size
                 );
+
         if(label){
             total_pos += 1;
             if(prediction){
@@ -165,9 +158,15 @@ int main(){
 
     }
 
+    std::cout << "Correctly identified " << true_pos << " / "<< total_pos <<" "<< Khv<<"-mers that were in the hash table\n";
+    std::cout << "Accuracy: "<< ((100.0 *true_pos) / total_pos) << "%\n";
 
-    float accuracy = (true_pos + true_neg) / (total_pos + total_neg);
-    std::cout << "Accuracy: "<<accuracy <<"\n";
+    std::cout << "Correctly identified " << true_neg << " / " << total_neg  <<" "<< Khv<<"-mers that were not in the hash table\n";
+    std::cout << "Accuracy: "<< ((100.0 *true_neg) / total_neg) << "%\n";
+
+    float total_accuracy  = 100.0 * (true_pos + true_neg) / (total_pos + total_neg);
+    std::cout <<"Total Accuracy: "<< total_accuracy << "%\n";
+
     
 
 
