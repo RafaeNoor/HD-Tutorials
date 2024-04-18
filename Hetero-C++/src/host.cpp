@@ -112,9 +112,12 @@ int main(){
 
     __hypervector__<Dhv, hvtype> encoded_hv = __hetero_hdc_create_hypervector<Dhv, hvtype>(0, (void*) one<hvtype>);	
     auto encoded_hv_handle = __hetero_hdc_get_handle(encoded_hv);
+
+
+
     size_t encoded_size = sizeof(hvtype) * Dhv;
     for(int i = 0; i < N_TEST; i++){
-        std::cout << "Test iteration "<< i << std::endl;
+        // std::cout << "Test iteration "<< i << std::endl;
         std::string entry;
         testFile >> entry;
 
@@ -151,7 +154,7 @@ int main(){
 
         bool label = included_str == "T";
 
-        std::cout << "PRE Query" << std::endl;
+        // std::cout << "PRE Query" << std::endl;
         bool prediction = query<Khv, Dhv, HASH_ROWS>(kmer.data(), sizeof(hvtype) * Khv,
                 encoding_scheme_handle, encoding_scheme_size,
                 hash_table_handle, hash_table_size,

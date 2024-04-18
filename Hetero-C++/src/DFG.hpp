@@ -1,6 +1,12 @@
 
 typedef int hvtype;
 
+#define COPY_HV_DEF(ELEMTY) \
+extern "C" void cu_rt_copy_hv_##ELEMTY(void* hv1, size_t row1, void* dst);
+
+COPY_HV_DEF(int);
+COPY_HV_DEF(float);
+COPY_HV_DEF(double);
 
 template<int K, int D>
 void encode_kmer(
@@ -23,9 +29,12 @@ void encode_kmer(
     __hetero_hint(DEVICE);
 #endif
 
+    {
         auto base_hv = __hetero_hdc_get_matrix_row<K,D,hvtype>(*encoding_scheme_ptr, K,D,index);
       __hypervector__<D, hvtype>  row = __hetero_hdc_wrap_shift<D, hvtype>(base_hv, index);
+      //__hypervector__<D, hvtype>  row = __hetero_hdc_sum<D, hvtype>(base_hv, base_hv);
       *base_ptr = row;
+    }
 
 #ifndef NODFG
     __hetero_task_end(task1); 
@@ -34,13 +43,15 @@ void encode_kmer(
         /* Output Buffers: 1*/ 1, encoded_hv_ptr, encoded_size,
         "produce_dot_prod_inner_task_2"
     );
+
 #endif
 
-
-
+    //__hetero_hint(DEVICE);
+    {
     __hypervector__<D, hvtype> product = __hetero_hdc_mul<D, hvtype>(*base_ptr, *encoded_hv_ptr); 
     *encoded_hv_ptr = product;
 
+    }
 #ifndef NODFG
     __hetero_task_end(task2); 
     __hetero_section_end(section);
@@ -64,7 +75,7 @@ void __attribute__ ((always_inline))   encode_kmer_wrapper(
         ){
 
 
-        std::cout << "encode wrapper_start: "<<  "\n";
+        //std::cout << "encode wrapper_start: "<<  "\n";
         
 
 
@@ -116,12 +127,11 @@ void produce_dot_prod(
 
     void* task2 = __hetero_task_begin(
          2, output_ptr, output_size, argmax, argmax_size,
-        /* Output Buffers: 1*/ 1, argmax, argmax_size,
+         2, output_ptr, output_size, argmax, argmax_size,
         "produce_dot_prod_argmax_task"
     );
 #endif
 
-    __hetero_hint(DEVICE);
     *argmax = __hetero_hdc_arg_max<N, hvtype>(*output_ptr);
 
 #ifndef NODFG
@@ -177,7 +187,10 @@ bool  query(hvtype* kmer, size_t kmer_size,
 
 
 
-   std::cout << "Pre encode wrapper "<<std::endl;
+   //std::cout << "Pre encode wrapper "<<std::endl;
+
+    //__hypervector__<Dhv, hvtype> encoded_hv = __hetero_hdc_create_hypervector<Dhv, hvtype>(0, (void*) one<hvtype>);	
+    //auto encoded_hv_handle = __hetero_hdc_get_handle(encoded_hv);
 
 #if 0 
 #ifndef NODFG
@@ -195,7 +208,25 @@ bool  query(hvtype* kmer, size_t kmer_size,
 #endif
 #endif
 
-   encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, base_ptr, base_size, shifted_hv_ptr, shifted_size, encoding_scheme_ptr, encoded_scheme_size);
+
+
+    for(int i = 0; i < K; i++){
+
+#if 0
+#ifndef NODFG
+        void* EncodeDAG = __hetero_launch(
+        (void*) encode_kmer<K,D>, 5, encoded_hv_handle, encoded_size, base_ptr, base_size, encoding_scheme_ptr, encoded_scheme_size, shifted_hv_ptr, shifted_size, kmer[i], 1, encoded_hv_handle, encoded_size);
+
+        __hetero_wait(EncodeDAG);
+#else
+        encode_kmer<K,D>(encoded_hv_handle, encoded_size, base_ptr, base_size, encoding_scheme_ptr, encoded_scheme_size, shifted_hv_ptr, shifted_size, kmer[i]);
+
+#endif
+#endif
+
+    }
+
+    encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, base_ptr, base_size, shifted_hv_ptr, shifted_size, encoding_scheme_ptr, encoded_scheme_size);
 
 
     int arg_max;
@@ -212,7 +243,9 @@ bool  query(hvtype* kmer, size_t kmer_size,
         encoded_hv_handle, encoded_size,
         output_handle, output_size,
         &arg_max, arg_max_size, 
-        1, &arg_max, arg_max_size);
+        2, 
+        output_handle, output_size,
+        &arg_max, arg_max_size);
 
         __hetero_wait(ProduceDAG);
 #else
@@ -222,11 +255,22 @@ bool  query(hvtype* kmer, size_t kmer_size,
         output_handle, output_size,
         &arg_max, arg_max_size) ;
 #endif
+    
+    //std::cout <<"arg max: "<< arg_max <<"\n";
 
+#ifdef NODFG
+    hvtype* output_copy = (hvtype*) malloc(sizeof(hvtype) * N);
+    cu_rt_copy_hv_int(output_handle, N, output_copy);
+    bool condition = output_copy[arg_max] > (0.8 * D);
+    free(output_copy);
+    return condition;
 
+#else
     hvtype* output_base = (hvtype*) output_handle;
-
     return output_base[arg_max] > (0.8 * D);
+#endif
+
+
 
 
 
