@@ -12,7 +12,7 @@ template<int K, int D>
 void encode_kmer(
         __hypervector__<D, hvtype>* encoded_hv_ptr, size_t encoded_size, 
         __hypervector__<D, hvtype>* base_ptr, size_t base_size, 
-        __hypermatrix__<K,D, hvtype>* encoding_scheme_ptr, size_t encoded_scheme_size,
+        __hypermatrix__<4,D, hvtype>* encoding_scheme_ptr, size_t encoded_scheme_size,
         __hypervector__<D, hvtype>* shifted_hv_ptr, size_t shifted_size, int index
         ){
 
@@ -30,9 +30,12 @@ void encode_kmer(
 #endif
 
     {
-        auto base_hv = __hetero_hdc_get_matrix_row<K,D,hvtype>(*encoding_scheme_ptr, K,D,index);
+#if 1
+        auto base_hv = __hetero_hdc_get_matrix_row<4,D,hvtype>(*encoding_scheme_ptr, 4,D,index);
       __hypervector__<D, hvtype>  row = __hetero_hdc_wrap_shift<D, hvtype>(base_hv, index);
+      //__hypervector__<D, hvtype>  row = __hetero_hdc_sum<D, hvtype>(base_hv, base_hv);
       *base_ptr = row;
+#endif
     }
 
 #ifndef NODFG
@@ -69,11 +72,11 @@ void   encode_kmer_wrapper(
         __hypervector__<D, hvtype>* encoded_hv_ptr, size_t encoded_size, 
         __hypervector__<D, hvtype>* base_ptr, size_t base_size, 
         __hypervector__<D, hvtype>* shifted_hv_ptr, size_t shifted_size, 
-        __hypermatrix__<K,D, hvtype>* encoding_scheme_ptr, size_t encoded_scheme_size
+        __hypermatrix__<4,D, hvtype>* encoding_scheme_ptr, size_t encoded_scheme_size
         ){
 
 
-        //std::cout << "encode wrapper_start: "<<  "\n";
+        std::cout << "encode wrapper_start: "<<  "\n";
         
 
 
@@ -93,7 +96,7 @@ void   encode_kmer_wrapper(
 
     }
 
-        // std::cout << "encode wrapper_end: "<<  "\n";
+        std::cout << "encode wrapper_end: "<<  "\n";
 
 
 }
@@ -129,9 +132,9 @@ void produce_dot_prod(
          2, output_ptr, output_size, argmax, argmax_size,
         "produce_dot_prod_argmax_task"
     );
-#endif
 
     __hetero_hint(DEVICE);
+#endif
 
     *argmax = __hetero_hdc_arg_max<N, hvtype>(*output_ptr);
 
@@ -179,7 +182,7 @@ void init_encoding(
 
 template<int K, int D, int N>
 bool  query(hvtype* kmer, size_t kmer_size,
-        __hypermatrix__<K,D, hvtype>* encoding_scheme_ptr, size_t encoded_scheme_size,
+        __hypermatrix__<4,D, hvtype>* encoding_scheme_ptr, size_t encoded_scheme_size,
         __hypermatrix__<N,D, hvtype>* hash_table, size_t hash_table_size,
         __hypervector__<D, hvtype>* base_ptr, size_t base_size, 
         __hypervector__<D, hvtype>* shifted_hv_ptr, size_t shifted_size,
@@ -188,31 +191,13 @@ bool  query(hvtype* kmer, size_t kmer_size,
 
 
 
-   //std::cout << "Pre encode wrapper "<<std::endl;
-
-    //__hypervector__<Dhv, hvtype> encoded_hv = __hetero_hdc_create_hypervector<Dhv, hvtype>(0, (void*) one<hvtype>);	
-    //auto encoded_hv_handle = __hetero_hdc_get_handle(encoded_hv);
-
-#if 0 
-#ifndef NODFG
-        void* InitDAG = __hetero_launch(
-        (void*) init_encoding<D>, 1, 
-        encoded_hv_handle, encoded_size,
-        1, 
-        encoded_hv_handle, encoded_size
-        );
-
-        __hetero_wait(InitDAG);
-#else
-   init_encoding<D>(encoded_hv_handle, encoded_size);
-
-#endif
-#endif
 
 
-    encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, base_ptr, base_size, shifted_hv_ptr, shifted_size, encoding_scheme_ptr, encoded_scheme_size);
+
+     encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, base_ptr, base_size, shifted_hv_ptr, shifted_size, encoding_scheme_ptr, encoded_scheme_size);
 
 
+    //return false;
     int arg_max;
     size_t arg_max_size = sizeof(int);
 

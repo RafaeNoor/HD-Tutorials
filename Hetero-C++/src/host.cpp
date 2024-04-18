@@ -67,18 +67,18 @@ int main(){
 
 	__hypervector__<Dhv, hvtype> T_encoding = __hetero_hdc_create_hypervector<Dhv, hvtype>(1, (void*) copy<hvtype>, T_vec);	
 
-    __hypermatrix__<Khv, Dhv, hvtype> encoding_scheme = __hetero_hdc_hypermatrix<Khv, Dhv, hvtype>();
+    __hypermatrix__<4, Dhv, hvtype> encoding_scheme = __hetero_hdc_hypermatrix<4, Dhv, hvtype>();
 
     // Initialize encoding scheme
-	__hetero_hdc_set_matrix_row<Khv, Dhv, hvtype>(encoding_scheme, A_encoding, 0); 
-	__hetero_hdc_set_matrix_row<Khv, Dhv, hvtype>(encoding_scheme, C_encoding, 1); 
-	__hetero_hdc_set_matrix_row<Khv, Dhv, hvtype>(encoding_scheme, G_encoding, 2); 
-	__hetero_hdc_set_matrix_row<Khv, Dhv, hvtype>(encoding_scheme, T_encoding, 3); 
+	__hetero_hdc_set_matrix_row<4, Dhv, hvtype>(encoding_scheme, A_encoding, 0); 
+	__hetero_hdc_set_matrix_row<4, Dhv, hvtype>(encoding_scheme, C_encoding, 1); 
+	__hetero_hdc_set_matrix_row<4, Dhv, hvtype>(encoding_scheme, G_encoding, 2); 
+	__hetero_hdc_set_matrix_row<4, Dhv, hvtype>(encoding_scheme, T_encoding, 3); 
 
     std::cout << "Created encoding scheme!" << std::endl;
 
     auto encoding_scheme_handle = __hetero_hdc_get_handle(encoding_scheme);
-    size_t encoding_scheme_size = sizeof(hvtype) * Dhv * Khv;
+    size_t encoding_scheme_size = sizeof(hvtype) * Dhv * 4;
 
 
     __hypermatrix__<HASH_ROWS, Dhv, hvtype> hash_table = __hetero_hdc_create_hypermatrix<HASH_ROWS, Dhv, hvtype>(1, (void*) copy<hvtype>, hash_table_entries.data());
@@ -93,7 +93,8 @@ int main(){
     std::string test_file_name = "./dataset/data_test.csv";
     std::fstream testFile(test_file_name, std::ios_base::in);
     
-    std::vector<hvtype> kmer(Khv);
+    //std::vector<hvtype> kmer(Khv);
+    hvtype kmer[Khv];
 
     int true_pos = 0;
     int true_neg = 0;
@@ -117,7 +118,7 @@ int main(){
 
     size_t encoded_size = sizeof(hvtype) * Dhv;
     for(int i = 0; i < N_TEST; i++){
-        //std::cout << "Test iteration "<< i << std::endl;
+        std::cout << "Test iteration "<< i << std::endl;
         std::string entry;
         testFile >> entry;
 
@@ -155,7 +156,7 @@ int main(){
         bool label = included_str == "T";
 
         // std::cout << "PRE Query" << std::endl;
-        bool prediction = query<Khv, Dhv, HASH_ROWS>(kmer.data(), sizeof(hvtype) * Khv,
+        bool prediction = query<Khv, Dhv, HASH_ROWS>(kmer, sizeof(hvtype) * Khv,
                 encoding_scheme_handle, encoding_scheme_size,
                 hash_table_handle, hash_table_size,
                 base_ptr_handle, base_size,
