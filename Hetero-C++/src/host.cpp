@@ -5,7 +5,7 @@
 #define Dhv 10000
 #define Khv 501
 #define HASH_ROWS (67 - 4)
-#define N_TEST 20
+#define N_TEST 4
 
 
 #ifdef HPVM
@@ -87,8 +87,8 @@ int main(){
     auto hash_table_handle = __hetero_hdc_get_handle(hash_table);
     size_t hash_table_size = sizeof(hvtype) * Dhv * HASH_ROWS;
 
-    //std::string test_file_name = "./dataset/data_test_small.csv";
-    std::string test_file_name = "./dataset/data_test_medium.csv";
+    std::string test_file_name = "./dataset/data_test_small.csv";
+    //std::string test_file_name = "./dataset/data_test_medium.csv";
     std::fstream testFile(test_file_name, std::ios_base::in);
     
     std::vector<hvtype> kmer(Khv);
