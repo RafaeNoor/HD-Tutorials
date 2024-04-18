@@ -117,7 +117,7 @@ int main(){
 
     size_t encoded_size = sizeof(hvtype) * Dhv;
     for(int i = 0; i < N_TEST; i++){
-        // std::cout << "Test iteration "<< i << std::endl;
+        //std::cout << "Test iteration "<< i << std::endl;
         std::string entry;
         testFile >> entry;
 
@@ -125,7 +125,7 @@ int main(){
         std::string included_str = entry.substr(total_length-1, 1);
         std::string sequence = entry.substr(0,total_length-2);
 
-        //assert(sequence.length() == Khv);
+        assert(sequence.length() == Khv);
 
         for(int j =0; j < sequence.length(); j++){
             char token = sequence[j];

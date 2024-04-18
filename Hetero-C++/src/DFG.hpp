@@ -32,7 +32,6 @@ void encode_kmer(
     {
         auto base_hv = __hetero_hdc_get_matrix_row<K,D,hvtype>(*encoding_scheme_ptr, K,D,index);
       __hypervector__<D, hvtype>  row = __hetero_hdc_wrap_shift<D, hvtype>(base_hv, index);
-      //__hypervector__<D, hvtype>  row = __hetero_hdc_sum<D, hvtype>(base_hv, base_hv);
       *base_ptr = row;
     }
 
@@ -46,7 +45,6 @@ void encode_kmer(
 
 #endif
 
-    //__hetero_hint(DEVICE);
     {
     __hypervector__<D, hvtype> product = __hetero_hdc_mul<D, hvtype>(*base_ptr, *encoded_hv_ptr); 
     *encoded_hv_ptr = product;
@@ -66,7 +64,7 @@ T one(size_t loop_index_var) {
 }
 
 template<int K, int D>
-void __attribute__ ((always_inline))   encode_kmer_wrapper(
+void   encode_kmer_wrapper(
         hvtype* kmer, size_t kmer_size,
         __hypervector__<D, hvtype>* encoded_hv_ptr, size_t encoded_size, 
         __hypervector__<D, hvtype>* base_ptr, size_t base_size, 
@@ -95,6 +93,7 @@ void __attribute__ ((always_inline))   encode_kmer_wrapper(
 
     }
 
+        // std::cout << "encode wrapper_end: "<<  "\n";
 
 
 }
@@ -131,6 +130,8 @@ void produce_dot_prod(
         "produce_dot_prod_argmax_task"
     );
 #endif
+
+    __hetero_hint(DEVICE);
 
     *argmax = __hetero_hdc_arg_max<N, hvtype>(*output_ptr);
 
@@ -208,23 +209,6 @@ bool  query(hvtype* kmer, size_t kmer_size,
 #endif
 #endif
 
-
-
-    for(int i = 0; i < K; i++){
-
-#if 0
-#ifndef NODFG
-        void* EncodeDAG = __hetero_launch(
-        (void*) encode_kmer<K,D>, 5, encoded_hv_handle, encoded_size, base_ptr, base_size, encoding_scheme_ptr, encoded_scheme_size, shifted_hv_ptr, shifted_size, kmer[i], 1, encoded_hv_handle, encoded_size);
-
-        __hetero_wait(EncodeDAG);
-#else
-        encode_kmer<K,D>(encoded_hv_handle, encoded_size, base_ptr, base_size, encoding_scheme_ptr, encoded_scheme_size, shifted_hv_ptr, shifted_size, kmer[i]);
-
-#endif
-#endif
-
-    }
 
     encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, base_ptr, base_size, shifted_hv_ptr, shifted_size, encoding_scheme_ptr, encoded_scheme_size);
 
