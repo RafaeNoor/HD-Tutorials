@@ -14,7 +14,7 @@ void encode_kmer(
     void* section = __hetero_section_begin();
 
     void* task = __hetero_task_begin(
-            5, encoded_hv_ptr, encoded_size, base_ptr, base_size, encoding_scheme_ptr, encoded_scheme_size, shifted_hv_ptr, shifted_size, index
+            5, encoded_hv_ptr, encoded_size, base_ptr, base_size, encoding_scheme_ptr, encoded_scheme_size, shifted_hv_ptr, shifted_size, index,
         /* Output Buffers: 1*/ 1, encoded_hv_ptr, encoded_size,
         "produce_dot_prod_inner_task"
     );
@@ -56,7 +56,7 @@ void encode_kmer_wrapper(
     size_t shifted_size = sizeof(hvtype) * D;
 
     auto base_ptr = __hetero_hdc_get_handle(base_hv);
-    auto shift_hv_ptr_ptr = __hetero_hdc_get_handle(shifted_hv);
+    auto shifted_hv_ptr = __hetero_hdc_get_handle(shifted_hv);
 
 
     // Initialize with all ones
@@ -124,9 +124,9 @@ void produce_dot_prod(
 }
 
 template<int K, int D, int N>
-bool query(hvtype* kmer, size_t kmer_size
+bool query(hvtype* kmer, size_t kmer_size,
         __hypermatrix__<K,D, hvtype>* encoding_scheme_ptr, size_t encoded_scheme_size,
-        __hypermatrix__<N,D, hvtype>* hash_table, size_t hash_table_size,
+        __hypermatrix__<N,D, hvtype>* hash_table, size_t hash_table_size
         ){
 
 
@@ -136,7 +136,8 @@ bool query(hvtype* kmer, size_t kmer_size
 
     encode_kmer_wrapper<K,D>(encoded_hv_handle, encoded_size, encoding_scheme_ptr, encoded_scheme_size);
 
-    int argmax;
+    int arg_max;
+    size_t arg_max_size = sizeof(int);
 
 	__hypervector__<N, hvtype> output_hv = __hetero_hdc_hypervector<N, hvtype>();
     auto output_handle = __hetero_hdc_get_handle(output_hv);
