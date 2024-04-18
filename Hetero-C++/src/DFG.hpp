@@ -134,7 +134,7 @@ bool query(hvtype* kmer, size_t kmer_size,
     auto encoded_hv_handle = __hetero_hdc_get_handle(encoded_hv);
     size_t encoded_size = sizeof(hvtype) * D;
 
-    encode_kmer_wrapper<K,D>(encoded_hv_handle, encoded_size, encoding_scheme_ptr, encoded_scheme_size);
+    // encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, encoding_scheme_ptr, encoded_scheme_size);
 
     int arg_max;
     size_t arg_max_size = sizeof(int);
@@ -145,7 +145,7 @@ bool query(hvtype* kmer, size_t kmer_size,
 
 #ifndef NODFG
         void* ProduceDAG = __hetero_launch(
-        (void*) produce_dot_prod<K,D, N>, 5, 
+        (void*) produce_dot_prod<K,D, N>, 4, 
         hash_table, hash_table_size,
         encoded_hv_handle, encoded_size,
         output_handle, output_size,
