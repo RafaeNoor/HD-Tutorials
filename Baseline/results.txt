@@ -1,0 +1,53 @@
+Each read is represented by a HV, threshold D / 2
+
+Correctly identified 156 / 200 501-mers that were in the hash table
+Accuracy: 78.00%
+
+Correctly identified 93 / 200 501-mers that were not in the hash table
+Accuracy: 46.50%
+
+Total Accuracy: 62.25%
+
+
+Each 1000 501-mers is represented by a HV, threshold D / 2
+
+Correctly identified 198 / 200 501-mers that were in the hash table
+Accuracy: 99.00%
+
+Correctly identified 47 / 200 501-mers that were not in the hash table
+Accuracy: 23.50%
+
+Total Accuracy: 61.25%
+
+
+Each 1000 501-mers is represented by a HV, threshold 0.9 * D
+
+Correctly identified 131 / 200 501-mers that were in the hash table
+Accuracy: 65.50%
+
+Correctly identified 181 / 200 501-mers that were not in the hash table
+Accuracy: 90.50%
+
+Total Accuracy: 78.00%
+
+
+Each 500 501-mers is represented by a HV, threshold 0.8 * D
+
+Correctly identified 166 / 200 501-mers that were in the hash table
+Accuracy: 83.00%
+
+Correctly identified 200 / 200 501-mers that were not in the hash table
+Accuracy: 100.00%
+
+Total Accuracy: 91.50%
+
+
+Each 400 501-mers is represented by a HV, threshold 0.8 * D
+
+Correctly identified 172 / 200 501-mers that were in the hash table
+Accuracy: 86.00%
+
+Correctly identified 200 / 200 501-mers that were not in the hash table
+Accuracy: 100.00%
+
+Total Accuracy: 93.00%
