@@ -121,6 +121,7 @@ void produce_dot_prod(
     );
 #endif
 
+    __hetero_hint(DEVICE);
     *argmax = __hetero_hdc_arg_max<N, hvtype>(*output_ptr);
 
 #ifndef NODFG
@@ -178,6 +179,7 @@ bool  query(hvtype* kmer, size_t kmer_size,
 
    std::cout << "Pre encode wrapper "<<std::endl;
 
+#if 0 
 #ifndef NODFG
         void* InitDAG = __hetero_launch(
         (void*) init_encoding<D>, 1, 
@@ -190,6 +192,7 @@ bool  query(hvtype* kmer, size_t kmer_size,
 #else
    init_encoding<D>(encoded_hv_handle, encoded_size);
 
+#endif
 #endif
 
    encode_kmer_wrapper<K,D>(kmer, kmer_size,encoded_hv_handle, encoded_size, base_ptr, base_size, shifted_hv_ptr, shifted_size, encoding_scheme_ptr, encoded_scheme_size);
