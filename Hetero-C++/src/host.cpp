@@ -5,7 +5,7 @@
 #define Dhv 10000
 #define Khv 501
 #define HASH_ROWS (67 - 4)
-#define N_TEST 4
+#define N_TEST 400
 
 
 #ifdef HPVM
@@ -75,6 +75,7 @@ int main(){
 	__hetero_hdc_set_matrix_row<Khv, Dhv, hvtype>(encoding_scheme, G_encoding, 2); 
 	__hetero_hdc_set_matrix_row<Khv, Dhv, hvtype>(encoding_scheme, T_encoding, 3); 
 
+    std::cout << "Created encoding scheme!" << std::endl;
 
     auto encoding_scheme_handle = __hetero_hdc_get_handle(encoding_scheme);
     size_t encoding_scheme_size = sizeof(hvtype) * Dhv * Khv;
@@ -87,8 +88,9 @@ int main(){
     auto hash_table_handle = __hetero_hdc_get_handle(hash_table);
     size_t hash_table_size = sizeof(hvtype) * Dhv * HASH_ROWS;
 
-    std::string test_file_name = "./dataset/data_test_small.csv";
-    //std::string test_file_name = "./dataset/data_test_medium.csv";
+    std::cout << "Created Table!" << std::endl;
+
+    std::string test_file_name = "./dataset/data_test.csv";
     std::fstream testFile(test_file_name, std::ios_base::in);
     
     std::vector<hvtype> kmer(Khv);
@@ -98,7 +100,21 @@ int main(){
     int total_pos = 0;
     int total_neg = 0;
 
+    __hypervector__<Dhv, hvtype> base_hv = __hetero_hdc_hypervector<Dhv, hvtype>();	
+    __hypervector__<Dhv, hvtype> shifted_hv = __hetero_hdc_hypervector<Dhv, hvtype>();	
+
+    auto base_ptr_handle = __hetero_hdc_get_handle(base_hv) ;
+    auto shifted_hv_ptr = __hetero_hdc_get_handle(shifted_hv) ;
+    
+    size_t base_size = sizeof(hvtype) * Dhv;
+    size_t shifted_size = sizeof(hvtype) * Dhv;
+
+
+	__hypervector__<Dhv, hvtype> encoded_hv = __hetero_hdc_create_hypervector<Dhv, hvtype>(0, (void*) one<hvtype>);	
+    auto encoded_hv_handle = __hetero_hdc_get_handle(encoded_hv);
+    size_t encoded_size = sizeof(hvtype) * Dhv;
     for(int i = 0; i < N_TEST; i++){
+        std::cout << "Test iteration "<< i << std::endl;
         std::string entry;
         testFile >> entry;
 
@@ -135,9 +151,13 @@ int main(){
 
         bool label = included_str == "T";
 
+        std::cout << "PRE Query" << std::endl;
         bool prediction = query<Khv, Dhv, HASH_ROWS>(kmer.data(), sizeof(hvtype) * Khv,
                 encoding_scheme_handle, encoding_scheme_size,
-                hash_table_handle, hash_table_size
+                hash_table_handle, hash_table_size,
+                base_ptr_handle, base_size,
+                shifted_hv_ptr, shifted_size,
+                encoded_hv_handle, encoded_size
                 );
 
         if(label){
