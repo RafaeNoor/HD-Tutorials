@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iostream>
 
-#define Dhv 2048 * 4
+#define Dhv 10000
 #define Khv 501
 #define HASH_ROWS (67 - 4)
 #define N_TEST 400
@@ -35,10 +35,10 @@ int main(){
 
     int num_entries = HASH_ROWS * Dhv;
     // Populate hash_table
-    std::vector<hvtype> hash_table_entries(num_entries);
+    hvtype* hash_table_entries = new hvtype[num_entries];
 
     std::string hash_file_name = "./dataset/model.csv";
-    std::fstream myfile(hash_file_name, std::ios_base::in);
+    std::ifstream myfile(hash_file_name);
 
     int a;
     int counter = 0;
@@ -46,14 +46,13 @@ int main(){
     {
         hash_table_entries[counter] = a;
         counter++;
-        if(counter == num_entries) break;
     }
 
     myfile.close();
 
     // First four rows correspond to A,C,G,T encoding
 
-    hvtype* base_ptr = hash_table_entries.data();
+    hvtype* base_ptr = hash_table_entries;
     // Read vectors from file
     hvtype* A_vec = base_ptr;
     hvtype* C_vec = base_ptr + Dhv;
@@ -82,7 +81,7 @@ int main(){
     size_t encoding_scheme_size = sizeof(hvtype) * Dhv * 4;
 
 
-    __hypermatrix__<HASH_ROWS, Dhv, hvtype> hash_table = __hetero_hdc_create_hypermatrix<HASH_ROWS, Dhv, hvtype>(1, (void*) copy<hvtype>, hash_table_entries.data());
+    __hypermatrix__<HASH_ROWS, Dhv, hvtype> hash_table = __hetero_hdc_create_hypermatrix<HASH_ROWS, Dhv, hvtype>(1, (void*) copy<hvtype>, (hvtype*) hash_table_entries);
 
 
     
@@ -123,12 +122,9 @@ int main(){
 
     size_t encoded_size = sizeof(hvtype) * Dhv;
     for(int i = 0; i < N_TEST; i++){
-        std::cout << "Iteration "<< i << "\n";
-
+        std::cout << "Test iteration "<< i << std::endl;
         std::string entry;
         testFile >> entry;
-
-        //std::cout << "Entry: "<< entry <<"\n";
 
         int total_length = entry.length();
         std::string included_str = entry.substr(total_length-1, 1);
@@ -163,14 +159,41 @@ int main(){
 
         bool label = included_str == "T";
 
-        bool prediction = query<Khv, Dhv, HASH_ROWS>(kmer, sizeof(int) * Khv,
-                encoding_scheme_handle, encoding_scheme_size,
-                hash_table_handle, hash_table_size,
-                base_ptr_handle, base_size,
-                shifted_hv_ptr, shifted_size,
-                encoded_hv_handle, encoded_size,
-                output_handle, output_size
-                );
+
+        for(int i =0; i < Khv; i++){
+            //std::cout << "i: "<< i << "\n";
+            //std::cout << "kmer[i]: "<< kmer[i] << "\n";
+
+            /*
+            void* EncodeDAG = __hetero_launch(
+                    (void*) encode_kmer_part_1<Khv,Dhv>, 
+                    5, 
+                    encoded_hv_handle, encoded_size, 
+                    base_ptr_handle, base_size, 
+                    encoding_scheme_handle, encoding_scheme_size, 
+                    shifted_hv_ptr, shifted_size, 
+                    kmer[i], 
+                    1, 
+                    base_ptr_handle, base_size);
+
+            __hetero_wait(EncodeDAG);
+            */
+
+            void* Encode2DAG = __hetero_launch(
+                    (void*) encode_kmer_part_2<Khv,Dhv>, 
+                    5, 
+                    encoded_hv_handle, encoded_size, 
+                    base_ptr_handle, base_size, 
+                    encoding_scheme_handle, encoding_scheme_size, 
+                    shifted_hv_ptr, shifted_size, 
+                    kmer[i], 
+                    1, 
+                    encoded_hv_handle, encoded_size);
+
+            __hetero_wait(Encode2DAG);
+
+        }
+        bool prediction = kmer[i] == 0;
 
         if(label){
             total_pos += 1;
@@ -189,7 +212,6 @@ int main(){
 
 
     }
-
     testFile.close();
 
     std::cout << "Correctly identified " << true_pos << " / "<< total_pos <<" "<< Khv<<"-mers that were in the hash table\n";
