@@ -31,7 +31,6 @@ void encode_kmer(
     );
 
 
-    __hetero_hint(DEVICE);
 
 #endif
     {
@@ -138,7 +137,6 @@ void produce_dot_prod(
         "produce_dot_prod_argmax_task"
     );
 
-    __hetero_hint(DEVICE);
 #endif
 
     *argmax = __hetero_hdc_arg_max<N, hvtype>(*output_ptr);
